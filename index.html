@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Journal — Nutrition & Activity</title>
+<meta name="color-scheme" content="light dark">
+<style>
+  :root{
+    --radius-card:16px;
+    --radius-ctrl:10px;
+    --accent:#0A84FF;
+    --accent-tint:rgba(10,132,255,.13);
+
+    /* light mode (default) */
+    --bg:#F2F2F7;
+    --card-bg:#FFFFFF;
+    --card-bg-2:#F7F7F9;
+    --ink:#1C1C1E;
+    --ink-soft:#8A8A8E;
+    --rule:#E3E3E8;
+    --shadow:0 1px 2px rgba(0,0,0,.04), 0 6px 20px rgba(0,0,0,.05);
+  }
+  [data-theme="dark"]{
+    --bg:#000000;
+    --card-bg:#1C1C1E;
+    --card-bg-2:#242426;
+    --ink:#F2F2F7;
+    --ink-soft:#8E8E93;
+    --rule:#313134;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    position:relative;
+    min-height:100vh;
+    transition:background .25s ease, color .25s ease;
+  }
+  h1,h2,h3{font-family:inherit; font-weight:700; margin:0; letter-spacing:-0.02em;}
+  .mono{font-family:ui-monospace,"SF Mono",Menlon,Menlo,Consolas,monospace;}
+
+  .app{max-width:720px;margin:0 auto;padding:24px 18px 80px;position:relative;z-index:1;}
+
+  /* Header */
+  .header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:10px;}
+  .fade-up{opacity:0;transform:translateY(8px);animation:fadeUp .4s ease forwards;}
+  @keyframes fadeUp{to{opacity:1;transform:translateY(0);}}
+  .header h1{font-size:28px;color:var(--ink);}
+  .header .sub{font-size:13px;color:var(--ink-soft);margin-top:3px;}
+  .header-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
+
+  .streak{
+    display:flex;align-items:center;gap:8px;
+    font-size:12px;color:var(--ink-soft);
+  }
+  .stitch{display:flex;gap:4px;align-items:center;}
+  .stitch-dot{
+    width:7px;height:7px;border-radius:50%;background:var(--rule);
+    opacity:0;transform:scale(.3);animation:popIn .3s cubic-bezier(.34,1.56,.64,1) forwards;
+  }
+  .stitch-dot.on{background:var(--accent);}
+  @keyframes popIn{to{opacity:1;transform:scale(1);}}
+
+  .profile-switch{display:flex;align-items:center;gap:6px;}
+  .icon-btn{
+    width:30px;height:30px;border-radius:50%;border:none;background:var(--card-bg);
+    box-shadow:var(--shadow);
+    cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);
+    transition:transform .15s ease, color .15s ease;
+    flex-shrink:0;
+  }
+  .icon-btn:hover{transform:scale(1.06);color:var(--accent);}
+  .icon-btn:active{transform:scale(.94);}
+  .icon-btn svg{width:15px;height:15px;}
+  select#profileSelect{
+    font-family:inherit;font-size:13px;font-weight:500;border:none;border-radius:var(--radius-ctrl);
+    padding:6px 10px;background:var(--card-bg);color:var(--ink);box-shadow:var(--shadow);
+    -webkit-appearance:none;appearance:none;cursor:pointer;
+  }
+
+  /* Segmented tab control */
+  .tabs{
+    display:flex;gap:2px;margin:20px 0 0;padding:3px;
+    background:var(--card-bg-2);border-radius:11px;
+  }
+  .tab{
+    flex:1;text-align:center;
+    padding:7px 10px;font-size:13px;font-weight:500;cursor:pointer;
+    color:var(--ink-soft);border-radius:8px;
+    transition:background .18s ease, color .18s ease;
+  }
+  .tab.active{background:var(--card-bg);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .panel{
+    background:var(--card-bg);
+    border-radius:var(--radius-card);
+    padding:20px;margin-top:10px;
+    box-shadow:var(--shadow);
+    animation:panelIn .28s cubic-bezier(.22,1,.36,1);
+  }
+  @keyframes panelIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  /* Log tab */
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+  .date-nav{display:flex;align-items:center;gap:8px;}
+  .date-nav button{
+    width:28px;height:28px;border-radius:50%;border:none;background:var(--card-bg-2);
+    cursor:pointer;font-size:14px;color:var(--ink);transition:background .15s ease, transform .15s ease;
+  }
+  .date-nav button:hover{background:var(--accent-tint);color:var(--accent);transform:scale(1.06);}
+  .date-nav button:active{transform:scale(.92);}
+  input[type=date]{
+    font-family:inherit;font-size:14px;border:none;background:transparent;color:var(--ink);
+  }
+  .edit-plan{font-size:12px;color:var(--accent);cursor:pointer;background:none;border:none;font-family:inherit;font-weight:500;transition:opacity .15s ease;}
+  .edit-plan:hover{opacity:.6;}
+
+  .section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin:20px 0 8px;
+    opacity:0;transform:translateX(-4px);animation:slideIn .35s ease forwards;}
+  .section-label:first-child{margin-top:0;}
+  @keyframes slideIn{to{opacity:1;transform:translateX(0);}}
+
+  .checklist{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--rule);}
+  .check-item{
+    display:flex;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px solid var(--rule);
+    opacity:0;animation:rowIn .3s ease forwards;
+    transition:background .2s ease;
+    border-radius:6px;
+  }
+  @keyframes rowIn{from{opacity:0;transform:translateY(3px);}to{opacity:1;transform:translateY(0);}}
+  .check-item:hover{background:var(--card-bg-2);}
+  .check-item label{flex:1;font-size:15px;cursor:pointer;transition:color .2s ease, opacity .2s ease;}
+  .check-item.done label{color:var(--ink);}
+
+  .checkbox-box{
+    width:22px;height:22px;border:1.6px solid var(--rule);border-radius:50%;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
+    transition:background .2s ease, border-color .2s ease, transform .15s ease;
+  }
+  .checkbox-box svg{width:12px;height:12px;overflow:visible;}
+  .checkbox-box svg path{
+    fill:none;stroke:#fff;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;
+    stroke-dasharray:20;stroke-dashoffset:20;transition:stroke-dashoffset .3s ease .05s;
+  }
+  .checkbox-box.checked{background:var(--accent);border-color:var(--accent);}
+  .checkbox-box.checked svg path{stroke-dashoffset:0;}
+  .checkbox-box.bounce{animation:boxBounce .3s ease;}
+  @keyframes boxBounce{0%{transform:scale(1);}45%{transform:scale(1.18);}100%{transform:scale(1);}}
+
+  .water-row{display:flex;align-items:center;gap:10px;padding:11px 2px;}
+  .water-pills{display:flex;flex-wrap:wrap;gap:8px;}
+  .water-pill{
+    padding:8px 14px;border-radius:20px;border:1.5px solid var(--rule);
+    font-size:13px;font-weight:500;color:var(--ink-soft);cursor:pointer;
+    transition:background .18s ease, border-color .18s ease, color .18s ease, transform .15s ease;
+  }
+  .water-pill:hover{transform:translateY(-1px);}
+  .water-pill.sel{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;}
+
+  .cal-badge{display:block;font-size:12px;color:var(--ink-soft);margin-top:6px;}
+  .cal-total{font-size:13px;font-weight:600;color:var(--accent);margin:10px 2px 0;}
+
+  .workout-item{flex-wrap:wrap;}
+  .workout-note{
+    flex-basis:100%;margin-top:6px;margin-left:34px;width:calc(100% - 34px);
+    font-family:inherit;font-size:13px;padding:7px 9px;
+    border:1px solid var(--rule);border-radius:8px;background:var(--card-bg-2);color:var(--ink);
+  }
+  .workout-note:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint);}
+  .water-row .glasses{display:flex;gap:5px;}
+  .glass{
+    width:20px;height:26px;border:1.6px solid var(--rule);border-radius:2px 2px 6px 6px;
+    cursor:pointer;background:var(--card-bg-2);position:relative;overflow:hidden;
+    transition:transform .15s ease, border-color .15s ease;
+  }
+  .glass:hover{transform:translateY(-2px);}
+  .glass .fill{
+    position:absolute;bottom:0;left:0;right:0;height:0%;
+    background:var(--accent);
+    transition:height .4s cubic-bezier(.34,1.56,.64,1);
+  }
+  .glass.filled{border-color:var(--accent);}
+  .glass.filled .fill{height:100%;}
+
+  .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field label{font-size:12px;color:var(--ink-soft);}
+  .field input[type=text],.field input[type=number],.field textarea,select{
+    font-family:inherit;font-size:14px;padding:9px 10px;
+    border:1px solid var(--rule);border-radius:var(--radius-ctrl);background:var(--card-bg-2);color:var(--ink);
+    transition:border-color .2s ease, box-shadow .2s ease;
+  }
+  .field input:focus,.field textarea:focus,input:focus-visible,button:focus-visible,select:focus-visible,.checkbox-box:focus-visible{
+    outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint);
+  }
+  textarea{resize:vertical;min-height:56px;}
+
+  .energy-scale{display:flex;gap:6px;}
+  .energy-dot{
+    width:34px;height:34px;border-radius:50%;border:1.5px solid var(--rule);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--ink-soft);
+    position:relative;
+    transition:background .2s ease, border-color .2s ease, transform .15s ease, color .2s ease;
+  }
+  .energy-dot:hover{transform:scale(1.06);}
+  .energy-dot.sel{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;}
+  @keyframes ping{0%{transform:scale(.6);opacity:.9;}100%{transform:scale(1.4);opacity:0;}}
+
+  .add-item-row{display:flex;gap:8px;margin-top:10px;}
+  .add-item-row input{flex:1;}
+  .btn{
+    font-family:inherit;font-size:14px;font-weight:600;
+    padding:9px 16px;border-radius:var(--radius-ctrl);border:none;background:var(--card-bg-2);color:var(--ink);
+    cursor:pointer;transition:transform .15s ease, opacity .15s ease, background .2s ease;
+  }
+  .btn:hover{opacity:.85;}
+  .btn:active{transform:scale(.98);}
+  .btn.ghost{background:transparent;color:var(--accent);}
+  .btn.save{
+    background:var(--accent);color:#fff;
+    width:100%;padding:13px;font-size:15px;margin-top:20px;position:relative;overflow:hidden;
+  }
+  .btn.save.saved{background:#34C759;}
+  .btn.small{padding:6px 10px;font-size:12px;}
+
+  /* Range views */
+  .range-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .range-nav .lbl{font-size:13px;color:var(--ink-soft);font-weight:500;}
+  .stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
+  .stat-card{
+    background:var(--card-bg-2);border-radius:12px;padding:14px;
+    opacity:0;transform:translateY(6px);animation:rowIn .35s ease forwards;
+  }
+  .stat-card .num{font-size:24px;font-weight:700;letter-spacing:-0.01em;}
+  .stat-card .lbl{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+
+  .day-row{
+    display:grid;grid-template-columns:64px 1fr 54px;gap:12px;align-items:center;
+    padding:10px 2px;border-bottom:1px solid var(--rule);
+    opacity:0;animation:rowIn .3s ease forwards;
+    border-radius:6px;transition:background .2s ease;
+  }
+  .day-row:hover{background:var(--card-bg-2);}
+  .day-row .d{font-size:12px;color:var(--ink-soft);}
+  .bar-track{height:8px;background:var(--rule);border-radius:5px;overflow:hidden;}
+  .bar-fill{height:100%;background:var(--accent);width:0%;
+    transition:width .6s cubic-bezier(.22,1,.36,1);}
+  .day-row .pct{font-size:12px;text-align:right;color:var(--ink-soft);}
+  .day-empty{color:var(--ink-soft);font-size:12px;}
+
+  .modal-bg{
+    position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;
+    padding:20px;z-index:10;animation:bgIn .2s ease;
+    backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  }
+  @keyframes bgIn{from{opacity:0;}to{opacity:1;}}
+  .modal{background:var(--card-bg);border-radius:18px;padding:22px;max-width:400px;width:100%;max-height:80vh;overflow:auto;
+    box-shadow:0 20px 60px rgba(0,0,0,.25);
+    animation:modalIn .25s cubic-bezier(.22,1,.36,1);}
+  @keyframes modalIn{from{opacity:0;transform:translateY(8px) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}
+  .modal h3{margin-bottom:14px;font-size:17px;}
+  .modal .item-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+  .modal .item-row input{flex:1;padding:7px 9px;border:1px solid var(--rule);border-radius:8px;font-size:13px;background:var(--card-bg-2);color:var(--ink);}
+  .empty-state{text-align:center;padding:40px 20px;color:var(--ink-soft);}
+  .empty-state .big{font-size:17px;font-weight:600;color:var(--ink);margin-bottom:6px;}
+
+  /* Appearance modal */
+  .seg{display:flex;background:var(--card-bg-2);border-radius:9px;padding:3px;gap:2px;}
+  .seg button{
+    flex:1;border:none;background:transparent;color:var(--ink-soft);font-family:inherit;
+    font-size:13px;font-weight:500;padding:7px 6px;border-radius:7px;cursor:pointer;transition:background .15s ease, color .15s ease;
+  }
+  .seg button.active{background:var(--card-bg);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .swatch-grid{display:flex;flex-wrap:wrap;gap:12px;margin-top:4px;}
+  .swatch{
+    width:34px;height:34px;border-radius:50%;cursor:pointer;border:2px solid transparent;
+    display:flex;align-items:center;justify-content:center;transition:transform .15s ease;
+  }
+  .swatch:hover{transform:scale(1.08);}
+  .swatch.sel{border-color:var(--ink);}
+  .swatch svg{width:14px;height:14px;}
+  .modal-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);margin:16px 0 8px;}
+  .modal-label:first-of-type{margin-top:0;}
+
+  @media (max-width:640px){
+    .field-grid{grid-template-columns:1fr;}
+    .stat-cards{grid-template-columns:1fr;}
+    .day-row{grid-template-columns:52px 1fr 44px;gap:8px;}
+    .header{flex-direction:column;}
+    .header-controls{justify-content:flex-start;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001s !important;animation-iteration-count:1 !important;transition-duration:.001s !important;}
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">Loading…</div>
+
+<script>
+const STORAGE_PREFIX = 'entry:';
+const TEMPLATE_KEY = 'plan-template';
+const PROFILES_KEY = 'profiles-list';
+const CURRENT_PROFILE_KEY = 'current-profile-id';
+const APPEARANCE_KEY = 'appearance-settings';
+
+const DEFAULT_TEMPLATE = {
+  morning: [
+    {id:'m1', label:'Jeera saunf water'},
+    {id:'m2', label:'Soaked almonds'},
+    {id:'m3', label:'Soaked raisins'},
+  ],
+  workout: [
+    {id:'w1', label:'Weight training'},
+    {id:'w2', label:'Swim'},
+    {id:'w3', label:'Sauna'},
+    {id:'w4', label:'Walk / run'},
+  ],
+  night: [
+    {id:'n1', label:'Walnuts'},
+    {id:'n2', label:'Herbal tea'},
+  ],
+};
+const WATER_OPTIONS = [1,1.5,2,2.5,3,3.5,4,4.5];
+const CHECK_SVG = '<svg viewBox="0 0 20 20"><path d="M4 10.5l4 4 8-9"/></svg>';
+
+/* Rough calorie estimator — matches common foods mentioned in free text
+   and sums approximate calories per typical serving. Not precise nutrition
+   data, just a quick ballpark so the field isn't empty. */
+const FOOD_CALORIES = [
+  ['idli',39],['dosa',133],['sambhar',120],['upma',200],['poha',180],
+  ['paratha',150],['chapati',80],['roti',80],['naan',260],['puri',100],
+  ['biryani',400],['pulao',250],['fried rice',330],['khichdi',220],
+  ['dal',150],['sabzi',120],['sabji',120],['curry',180],['paneer',265],
+  ['chole',180],['chana',180],['rajma',200],['curd',60],['yogurt',60],
+  ['raita',80],['pickle',20],['papad',35],['chutney',30],
+  ['omelette',150],['omelet',150],['boiled egg',78],['eggs',140],['egg',70],
+  ['toast',75],['bread',80],['butter',100],['cheese',110],['ghee',45],
+  ['milk',103],['tea',40],['chai',40],['coffee',5],['juice',110],
+  ['smoothie',220],['shake',250],
+  ['banana',105],['apple',95],['orange',62],['mango',150],['papaya',60],
+  ['grapes',70],['pomegranate',100],['almonds',35],['walnuts',65],
+  ['raisins',30],['cashews',55],['nuts',170],['dates',65],
+  ['salad',60],['soup',120],['sandwich',250],['burger',350],['pizza',285],
+  ['fries',365],['pasta',220],['noodles',220],['maggi',205],
+  ['chicken',240],['fish',180],['mutton',280],['prawns',150],
+  ['rice',200],['quinoa',220],['oats',150],['oatmeal',150],['cereal',180],
+  ['protein shake',150],['soda',150],['coke',150],['ice cream',210],
+  ['chocolate',150],['biscuit',80],['cookie',80],['samosa',260],
+  ['vada',150],['pakora',180],['jalebi',150],['ladoo',180],['barfi',180],
+];
+function estimateCalories(text){
+  if(!text || !text.trim()) return 0;
+  const lower = ' '+text.toLowerCase()+' ';
+  let total = 0;
+  const consumed = [];
+  const sorted = FOOD_CALORIES.slice().sort((a,b)=>b[0].length-a[0].length);
+  sorted.forEach(([food,cals])=>{
+    const escaped = food.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const re = new RegExp('(\\d+)?\\s*'+escaped+'s?\\b','gi');
+    let m;
+    while((m = re.exec(lower))){
+      const overlap = consumed.some(([s,e])=> m.index < e && re.lastIndex > s);
+      if(overlap) continue;
+      consumed.push([m.index, re.lastIndex]);
+      const qty = m[1] ? parseInt(m[1],10) : 1;
+      total += qty * cals;
+    }
+  });
+  return total;
+}
+
+const ACCENT_PALETTE = [
+  {id:'blue',   name:'Blue',   hex:'#0A84FF'},
+  {id:'indigo', name:'Indigo', hex:'#5E5CE6'},
+  {id:'purple', name:'Purple', hex:'#BF5AF2'},
+  {id:'pink',   name:'Pink',   hex:'#FF375F'},
+  {id:'orange', name:'Orange', hex:'#FF9F0A'},
+  {id:'yellow', name:'Yellow', hex:'#FFD60A'},
+  {id:'green',  name:'Green',  hex:'#30D158'},
+  {id:'teal',   name:'Teal',   hex:'#40C8E0'},
+  {id:'graphite', name:'Graphite', hex:'#8E8E93'},
+];
+const DEFAULT_APPEARANCE = {mode:'system', accentId:'blue'};
+
+let state = {
+  tab: 'log',
+  currentDate: todayStr(),
+  template: null,
+  entryCache: {},
+  rangeAnchor: todayStr(),
+  showPlanModal: false,
+  profiles: [],
+  profileId: null,
+  showProfileModal: false,
+  appearance: DEFAULT_APPEARANCE,
+  showAppearanceModal: false,
+  github: null,
+  showSyncModal: false,
+  syncStatus: '',
+};
+
+function hexToRgb(hex){
+  const v = hex.replace('#','');
+  return [parseInt(v.substr(0,2),16), parseInt(v.substr(2,2),16), parseInt(v.substr(4,2),16)];
+}
+function applyTheme(){
+  const isDark = state.appearance.mode === 'dark'
+    || (state.appearance.mode === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  const accent = ACCENT_PALETTE.find(a=>a.id===state.appearance.accentId) || ACCENT_PALETTE[0];
+  const [r,g,b] = hexToRgb(accent.hex);
+  document.documentElement.style.setProperty('--accent', accent.hex);
+  document.documentElement.style.setProperty('--accent-tint', `rgba(${r},${g},${b},.14)`);
+}
+async function loadAppearance(){
+  try{
+    const res = await store.get(APPEARANCE_KEY, false);
+    if(res && res.value) return Object.assign({}, DEFAULT_APPEARANCE, JSON.parse(res.value));
+  }catch(e){}
+  return DEFAULT_APPEARANCE;
+}
+async function saveAppearance(a){
+  state.appearance = a;
+  applyTheme();
+  try{ await store.set(APPEARANCE_KEY, JSON.stringify(a), false); }catch(e){console.error(e);}
+}
+if(window.matchMedia){
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>{
+    if(state.appearance.mode === 'system') applyTheme();
+  });
+}
+
+function profileEntryKey(dateStr){ return 'profile:'+state.profileId+':'+STORAGE_PREFIX+dateStr; }
+function profileTemplateKey(){ return 'profile:'+state.profileId+':'+TEMPLATE_KEY; }
+
+async function loadProfiles(){
+  try{
+    const res = await store.get(PROFILES_KEY, false);
+    if(res && res.value){
+      const list = JSON.parse(res.value);
+      if(list.length) return list;
+    }
+  }catch(e){}
+  const def = [{id:'p1', name:'You'}];
+  try{ await store.set(PROFILES_KEY, JSON.stringify(def), false); }catch(e){}
+  return def;
+}
+async function saveProfiles(list){
+  state.profiles = list;
+  try{ await store.set(PROFILES_KEY, JSON.stringify(list), false); }catch(e){console.error(e);}
+}
+async function loadCurrentProfileId(profiles){
+  try{
+    const res = await store.get(CURRENT_PROFILE_KEY, false);
+    if(res && res.value && profiles.some(p=>p.id===res.value)) return res.value;
+  }catch(e){}
+  return profiles[0].id;
+}
+async function setCurrentProfileId(id){
+  state.profileId = id;
+  state.entryCache = {};
+  try{ await store.set(CURRENT_PROFILE_KEY, id, false); }catch(e){console.error(e);}
+}
+
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function addDays(dateStr, n){
+  const d = new Date(dateStr+'T00:00:00');
+  d.setDate(d.getDate()+n);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function fmtShort(dateStr){
+  const d = new Date(dateStr+'T00:00:00');
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+function fmtWeekday(dateStr){
+  const d = new Date(dateStr+'T00:00:00');
+  return d.toLocaleDateString('en-US',{weekday:'short'});
+}
+function emptyEntry(dateStr){
+  return {
+    date: dateStr,
+    water: 0,
+    morningChecks: {},
+    breakfast: {text:'', calories:0},
+    chai: false,
+    lunch: {text:'', calories:0},
+    dinner: {text:'', calories:0},
+    workoutChecks: {},
+    workoutNotes: {},
+    nightChecks: {},
+    energy: null,
+    notes: '',
+  };
+}
+function prefersReducedMotion(){
+  return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+/* Storage adapter: uses window.storage when available (Claude artifact
+   preview), and falls back to localStorage when the file is opened
+   directly in a browser — so entries persist in both contexts instead
+   of silently failing and being lost on close. */
+const localStore = {
+  async get(key){
+    const v = window.localStorage.getItem(key);
+    return v === null ? null : {key, value:v};
+  },
+  async set(key, value){
+    window.localStorage.setItem(key, value);
+    return {key, value};
+  },
+  async list(prefix){
+    const keys = [];
+    for(let i=0;i<window.localStorage.length;i++){
+      const k = window.localStorage.key(i);
+      if(!prefix || k.startsWith(prefix)) keys.push(k);
+    }
+    return {keys};
+  }
+};
+const hasArtifactStorage = (typeof window.storage !== 'undefined')
+  && typeof window.storage.get === 'function';
+const store = hasArtifactStorage ? window.storage : localStore;
+
+async function loadTemplate(){
+  try{
+    const res = await store.get(profileTemplateKey(), false);
+    if(res && res.value) return JSON.parse(res.value);
+  }catch(e){}
+  return DEFAULT_TEMPLATE;
+}
+async function saveTemplate(t){
+  state.template = t;
+  try{ await store.set(profileTemplateKey(), JSON.stringify(t), false); }catch(e){console.error(e);}
+}
+async function loadEntry(dateStr){
+  if(state.entryCache[dateStr]) return state.entryCache[dateStr];
+  try{
+    const res = await store.get(profileEntryKey(dateStr), false);
+    if(res && res.value){
+      const parsed = JSON.parse(res.value);
+      state.entryCache[dateStr] = parsed;
+      return parsed;
+    }
+  }catch(e){}
+  const empty = emptyEntry(dateStr);
+  state.entryCache[dateStr] = empty;
+  return empty;
+}
+async function saveEntry(entry){
+  state.entryCache[entry.date] = entry;
+  try{
+    await store.set(profileEntryKey(entry.date), JSON.stringify(entry), false);
+    if(state.github && state.github.enabled) pushProfileData(state.profileId).catch(e=>console.error(e));
+    return true;
+  }catch(e){ console.error(e); return false; }
+}
+
+/* ---------- GITHUB SYNC ---------- */
+const GITHUB_SETTINGS_KEY = 'github-sync-settings';
+const DEFAULT_GITHUB = {owner:'', repo:'', token:'', branch:'main', enabled:false, lastSync:null};
+
+function b64EncodeUnicode(str){ return btoa(unescape(encodeURIComponent(str))); }
+function b64DecodeUnicode(str){ return decodeURIComponent(escape(atob(str))); }
+
+async function loadGithubSettings(){
+  try{
+    const res = await store.get(GITHUB_SETTINGS_KEY, false);
+    if(res && res.value) return Object.assign({}, DEFAULT_GITHUB, JSON.parse(res.value));
+  }catch(e){}
+  return Object.assign({}, DEFAULT_GITHUB);
+}
+async function saveGithubSettings(g){
+  state.github = g;
+  try{ await store.set(GITHUB_SETTINGS_KEY, JSON.stringify(g), false); }catch(e){console.error(e);}
+}
+
+async function ghApi(path, opts){
+  opts = opts || {};
+  const g = state.github;
+  const res = await fetch(`https://api.github.com/repos/${g.owner}/${g.repo}/contents/${path}`, {
+    method: opts.method || 'GET',
+    headers: {
+      'Authorization': 'token '+g.token,
+      'Accept': 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+    },
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  return res;
+}
+async function ghGetFile(path){
+  const res = await ghApi(path);
+  if(res.status===404) return null;
+  if(!res.ok) throw new Error('GitHub GET failed: '+res.status);
+  const data = await res.json();
+  return {sha:data.sha, content: JSON.parse(b64DecodeUnicode(data.content))};
+}
+async function ghPutFile(path, obj, message){
+  const existing = await ghGetFile(path).catch(()=>null);
+  const body = {
+    message: message || 'Update journal data',
+    content: b64EncodeUnicode(JSON.stringify(obj, null, 2)),
+    branch: state.github.branch || 'main',
+  };
+  if(existing) body.sha = existing.sha;
+  const res = await ghApi(path, {method:'PUT', body});
+  if(!res.ok){
+    const t = await res.text().catch(()=> '');
+    throw new Error('GitHub PUT failed: '+res.status+' '+t);
+  }
+  return res.json();
+}
+
+async function testGithubConnection(){
+  const res = await fetch(`https://api.github.com/repos/${state.github.owner}/${state.github.repo}`, {
+    headers: {'Authorization':'token '+state.github.token, 'Accept':'application/vnd.github+json'}
+  });
+  if(!res.ok) throw new Error('Could not reach repo (status '+res.status+'). Check owner/repo/token.');
+  return true;
+}
+
+async function collectProfileEntries(profileId){
+  const prefix = 'profile:'+profileId+':'+STORAGE_PREFIX;
+  const {keys} = await store.list(prefix, false);
+  const entries = {};
+  for(const k of keys){
+    const date = k.slice(prefix.length);
+    const res = await store.get(k, false);
+    if(res && res.value) entries[date] = JSON.parse(res.value);
+  }
+  return entries;
+}
+
+async function pushProfileData(profileId){
+  if(!state.github || !state.github.enabled || !state.github.owner || !state.github.repo || !state.github.token) return;
+  const entries = await collectProfileEntries(profileId);
+  const templateRes = await store.get('profile:'+profileId+':'+TEMPLATE_KEY, false).catch(()=>null);
+  const template = (templateRes && templateRes.value) ? JSON.parse(templateRes.value) : state.template;
+  await ghPutFile(`data/${profileId}.json`, {template, entries}, 'Update journal data');
+  const profRes = await store.get(PROFILES_KEY, false).catch(()=>null);
+  if(profRes && profRes.value){
+    await ghPutFile(`data/_profiles.json`, JSON.parse(profRes.value), 'Update profile list');
+  }
+  state.github.lastSync = new Date().toISOString();
+  await saveGithubSettings(state.github);
+}
+
+async function pullProfileData(profileId){
+  if(!state.github || !state.github.enabled || !state.github.owner || !state.github.repo || !state.github.token) return false;
+  try{
+    const profilesFile = await ghGetFile('data/_profiles.json');
+    if(profilesFile && profilesFile.content && profilesFile.content.length){
+      await store.set(PROFILES_KEY, JSON.stringify(profilesFile.content), false);
+      state.profiles = profilesFile.content;
+    }
+    const file = await ghGetFile(`data/${profileId}.json`);
+    if(!file) return false;
+    const {template, entries} = file.content;
+    if(template) await store.set('profile:'+profileId+':'+TEMPLATE_KEY, JSON.stringify(template), false);
+    for(const date in entries){
+      await store.set('profile:'+profileId+':'+STORAGE_PREFIX+date, JSON.stringify(entries[date]), false);
+    }
+    state.entryCache = {};
+    state.github.lastSync = new Date().toISOString();
+    await saveGithubSettings(state.github);
+    return true;
+  }catch(e){ console.error(e); return false; }
+}
+
+async function loadRange(dates){
+  const results = {};
+  for(const d of dates){ results[d] = await loadEntry(d); }
+  return results;
+}
+function entryHasData(e){
+  if(!e) return false;
+  const anyMorning = Object.values(e.morningChecks||{}).some(Boolean);
+  const anyWorkout = Object.values(e.workoutChecks||{}).some(Boolean);
+  const anyNight = Object.values(e.nightChecks||{}).some(Boolean);
+  return anyMorning || anyWorkout || anyNight || e.chai || (e.water>0) || e.energy
+    || (e.breakfast && e.breakfast.text && e.breakfast.text.trim())
+    || (e.lunch && e.lunch.text && e.lunch.text.trim())
+    || (e.dinner && e.dinner.text && e.dinner.text.trim())
+    || (e.notes && e.notes.trim());
+}
+function adherencePct(e, template){
+  if(!e || !template) return null;
+  if(!entryHasData(e)) return null;
+  const total = template.morning.length + template.workout.length + template.night.length + 1; // +1 for chai
+  if(!total) return null;
+  const done = template.morning.filter(t=>e.morningChecks && e.morningChecks[t.id]).length
+    + template.workout.filter(t=>e.workoutChecks && e.workoutChecks[t.id]).length
+    + template.night.filter(t=>e.nightChecks && e.nightChecks[t.id]).length
+    + (e.chai ? 1 : 0);
+  return Math.round((done/total)*100);
+}
+function totalCalories(e){
+  return (e.breakfast&&e.breakfast.calories||0) + (e.lunch&&e.lunch.calories||0) + (e.dinner&&e.dinner.calories||0);
+}
+function workoutDayCount(entries, dates){
+  return dates.filter(d=>{
+    const e = entries[d];
+    return e && Object.values(e.workoutChecks||{}).some(Boolean);
+  }).length;
+}
+
+async function computeStreak(){
+  let streak = 0;
+  let d = todayStr();
+  while(true){
+    const e = await loadEntry(d);
+    if(entryHasData(e)){ streak++; d = addDays(d,-1); } else break;
+    if(streak > 60) break;
+  }
+  return streak;
+}
+
+function animateNumber(el, target, opts){
+  opts = opts || {};
+  const suffix = opts.suffix || '';
+  if(target === null){ el.textContent = '—'; return; }
+  if(prefersReducedMotion()){ el.textContent = target+suffix; return; }
+  const duration = 650;
+  const start = performance.now();
+  function tick(now){
+    const t = Math.min(1, (now-start)/duration);
+    const eased = 1 - Math.pow(1-t, 3);
+    el.textContent = Math.round(target*eased)+suffix;
+    if(t<1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function render(){
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  app.appendChild(renderHeader());
+  app.appendChild(renderTabs());
+  const panel = document.createElement('div');
+  panel.className = 'panel';
+  panel.id = 'panel';
+  app.appendChild(panel);
+  renderPanel();
+  if(state.showPlanModal) app.appendChild(renderPlanModal());
+  if(state.showProfileModal) app.appendChild(renderProfileModal());
+  if(state.showAppearanceModal) app.appendChild(renderAppearanceModal());
+  if(state.showSyncModal) app.appendChild(renderSyncModal());
+}
+
+function renderProfileModal(){
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.onclick = (e)=>{ if(e.target===bg){ state.showProfileModal=false; render(); } };
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `<h3>Add a profile</h3>
+    <div class="add-item-row">
+      <input type="text" id="newProfileInput" placeholder="Name (e.g. Partner, Kid)…">
+      <button class="btn small" id="addProfileBtn">Add</button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px;">
+      <button class="btn ghost small" id="closeProfileModalBtn">Done</button>
+    </div>`;
+  bg.appendChild(modal);
+  modal.querySelector('#addProfileBtn').onclick = async ()=>{
+    const input = modal.querySelector('#newProfileInput');
+    const name = input.value.trim();
+    if(!name) return;
+    const newProfile = {id:'p'+Date.now(), name};
+    const list = state.profiles.concat([newProfile]);
+    await saveProfiles(list);
+    await setCurrentProfileId(newProfile.id);
+    state.template = await loadTemplate();
+    state.rangeAnchor = todayStr();
+    state.showProfileModal = false;
+    render();
+  };
+  modal.querySelector('#closeProfileModalBtn').onclick = ()=>{ state.showProfileModal = false; render(); };
+  return bg;
+}
+
+function renderAppearanceModal(){
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.onclick = (e)=>{ if(e.target===bg){ state.showAppearanceModal=false; render(); } };
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+
+  const modeRow = document.createElement('div');
+  modeRow.innerHTML = `<div class="modal-label">Appearance</div>`;
+  const seg = document.createElement('div');
+  seg.className = 'seg';
+  [['system','System'],['light','Light'],['dark','Dark']].forEach(([val,lbl])=>{
+    const b = document.createElement('button');
+    b.textContent = lbl;
+    b.className = state.appearance.mode===val ? 'active' : '';
+    b.onclick = async ()=>{
+      await saveAppearance(Object.assign({}, state.appearance, {mode:val}));
+      render();
+    };
+    seg.appendChild(b);
+  });
+  modeRow.appendChild(seg);
+
+  const colorRow = document.createElement('div');
+  colorRow.innerHTML = `<div class="modal-label">Accent color</div>`;
+  const grid = document.createElement('div');
+  grid.className = 'swatch-grid';
+  ACCENT_PALETTE.forEach(a=>{
+    const sw = document.createElement('div');
+    sw.className = 'swatch'+(state.appearance.accentId===a.id ? ' sel' : '');
+    sw.style.background = a.hex;
+    sw.title = a.name;
+    if(state.appearance.accentId===a.id){
+      sw.innerHTML = '<svg viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg>';
+    }
+    sw.onclick = async ()=>{
+      await saveAppearance(Object.assign({}, state.appearance, {accentId:a.id}));
+      render();
+    };
+    grid.appendChild(sw);
+  });
+  colorRow.appendChild(grid);
+
+  const header = document.createElement('h3');
+  header.textContent = 'Appearance';
+  const doneRow = document.createElement('div');
+  doneRow.style.cssText = 'display:flex;justify-content:flex-end;margin-top:20px;';
+  const doneBtn = document.createElement('button');
+  doneBtn.className = 'btn ghost small';
+  doneBtn.textContent = 'Done';
+  doneBtn.onclick = ()=>{ state.showAppearanceModal = false; render(); };
+  doneRow.appendChild(doneBtn);
+
+  modal.appendChild(header);
+  modal.appendChild(modeRow);
+  modal.appendChild(colorRow);
+  modal.appendChild(doneRow);
+  bg.appendChild(modal);
+  return bg;
+}
+
+function renderSyncModal(){
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.onclick = (e)=>{ if(e.target===bg){ state.showSyncModal=false; render(); } };
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  const g = state.github || Object.assign({}, DEFAULT_GITHUB);
+
+  modal.innerHTML = `
+    <h3>GitHub sync</h3>
+    <p style="font-size:12.5px;color:var(--ink-soft);line-height:1.5;margin-bottom:14px;">
+      Syncs this profile's entries to a GitHub repo you control, so phone and iPad stay in sync.
+      The token below is stored only in this browser and sent directly to GitHub — never through Claude.
+      Use a fine-grained token limited to one private repo.
+    </p>
+    <div class="field" style="margin-bottom:10px;">
+      <label>GitHub username</label>
+      <input type="text" id="ghOwner" value="${escAttr(g.owner)}" placeholder="e.g. yogesh">
+    </div>
+    <div class="field" style="margin-bottom:10px;">
+      <label>Repository name</label>
+      <input type="text" id="ghRepo" value="${escAttr(g.repo)}" placeholder="e.g. daily-journal">
+    </div>
+    <div class="field" style="margin-bottom:10px;">
+      <label>Personal access token</label>
+      <input type="password" id="ghToken" value="${escAttr(g.token)}" placeholder="ghp_… or fine-grained token">
+    </div>
+    <div class="check-item" id="ghEnableRow" style="border-bottom:none;padding-left:0;">
+      <div class="checkbox-box${g.enabled?' checked':''}" id="ghEnableBox">${CHECK_SVG}</div>
+      <label id="ghEnableLabel">Enable sync</label>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+      <button class="btn small" id="ghTestBtn">Test connection</button>
+      <button class="btn small" id="ghSyncNowBtn">Sync now</button>
+    </div>
+    <div style="font-size:12px;color:var(--ink-soft);margin-top:10px;" id="ghStatus">
+      ${g.lastSync ? 'Last synced '+new Date(g.lastSync).toLocaleString() : 'Not synced yet'}
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:18px;">
+      <button class="btn ghost small" id="closeSyncModalBtn">Done</button>
+    </div>`;
+  bg.appendChild(modal);
+
+  let enabled = g.enabled;
+  const enableBox = modal.querySelector('#ghEnableBox');
+  const toggleEnable = ()=>{
+    enabled = !enabled;
+    enableBox.classList.toggle('checked', enabled);
+  };
+  enableBox.onclick = toggleEnable;
+  modal.querySelector('#ghEnableLabel').onclick = toggleEnable;
+
+  function currentSettingsFromForm(){
+    return {
+      owner: modal.querySelector('#ghOwner').value.trim(),
+      repo: modal.querySelector('#ghRepo').value.trim(),
+      token: modal.querySelector('#ghToken').value.trim(),
+      branch: g.branch || 'main',
+      enabled,
+      lastSync: g.lastSync,
+    };
+  }
+
+  modal.querySelector('#ghTestBtn').onclick = async ()=>{
+    const statusEl = modal.querySelector('#ghStatus');
+    state.github = currentSettingsFromForm();
+    statusEl.textContent = 'Testing…';
+    try{
+      await testGithubConnection();
+      statusEl.textContent = 'Connected ✓ Repo reachable.';
+    }catch(e){
+      statusEl.textContent = 'Connection failed: '+e.message;
+    }
+  };
+  modal.querySelector('#ghSyncNowBtn').onclick = async ()=>{
+    const statusEl = modal.querySelector('#ghStatus');
+    state.github = currentSettingsFromForm();
+    await saveGithubSettings(state.github);
+    statusEl.textContent = 'Syncing…';
+    try{
+      await pushProfileData(state.profileId);
+      await pullProfileData(state.profileId);
+      state.template = await loadTemplate();
+      statusEl.textContent = 'Synced ✓ '+new Date().toLocaleString();
+    }catch(e){
+      statusEl.textContent = 'Sync failed: '+e.message;
+    }
+  };
+  modal.querySelector('#closeSyncModalBtn').onclick = async ()=>{
+    state.github = currentSettingsFromForm();
+    await saveGithubSettings(state.github);
+    state.showSyncModal = false;
+    render();
+  };
+  return bg;
+}
+
+function renderHeader(){
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `
+    <div class="header">
+      <div>
+        <h1 class="fade-up" style="animation-delay:.02s">Daily Journal</h1>
+        <div class="sub fade-up" style="animation-delay:.08s">Nutrition plan &amp; daily activity, in one page</div>
+      </div>
+      <div class="header-controls fade-up" style="animation-delay:.1s">
+        <div class="profile-switch" id="profileSwitch"></div>
+        <button class="icon-btn" id="appearanceBtn" title="Appearance" aria-label="Appearance settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3.5a2 2 0 010-4h.09A1.65 1.65 0 005 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 5a1.65 1.65 0 001-1.51V3.5a2 2 0 014 0v.09A1.65 1.65 0 0015 5a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"></path>
+          </svg>
+        </button>
+        <button class="icon-btn" id="syncBtn" title="GitHub sync" aria-label="GitHub sync settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"></path>
+          </svg>
+        </button>
+        <div class="streak" id="streakWrap"></div>
+      </div>
+    </div>`;
+  const profWrap = wrap.querySelector('#profileSwitch');
+  const sel = document.createElement('select');
+  sel.id = 'profileSelect';
+  state.profiles.forEach(p=>{
+    const opt = document.createElement('option');
+    opt.value = p.id; opt.textContent = p.name;
+    if(p.id===state.profileId) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  sel.onchange = async ()=>{
+    await setCurrentProfileId(sel.value);
+    state.template = await loadTemplate();
+    state.rangeAnchor = todayStr();
+    render();
+  };
+  const addBtn = document.createElement('button');
+  addBtn.className = 'icon-btn';
+  addBtn.title = 'Add profile';
+  addBtn.setAttribute('aria-label','Add profile');
+  addBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+  addBtn.onclick = ()=>{ state.showProfileModal = true; render(); };
+  profWrap.appendChild(sel);
+  profWrap.appendChild(addBtn);
+  wrap.querySelector('#appearanceBtn').onclick = ()=>{ state.showAppearanceModal = true; render(); };
+  wrap.querySelector('#syncBtn').onclick = ()=>{ state.showSyncModal = true; render(); };
+  if(state.github && state.github.enabled){
+    wrap.querySelector('#syncBtn').style.color = 'var(--accent)';
+  }
+
+  computeStreak().then(s=>{
+    const el = document.getElementById('streakWrap');
+    if(!el) return;
+    const dots = Array.from({length:7},(_,i)=>i<Math.min(s,7)).reverse();
+    el.innerHTML = `<div class="stitch">${dots.map((on,i)=>`<span class="stitch-dot ${on?'on':''}" style="animation-delay:${.15+i*.05}s"></span>`).join('')}</div><span>${s}-day streak</span>`;
+  });
+  return wrap;
+}
+
+function renderTabs(){
+  const wrap = document.createElement('div');
+  wrap.className = 'tabs';
+  const tabs = [['log','Log'],['week','Week'],['biweekly','Biweekly'],['month','Month']];
+  tabs.forEach(([key,label])=>{
+    const t = document.createElement('div');
+    t.className = 'tab'+(state.tab===key?' active':'');
+    t.textContent = label;
+    t.onclick = ()=>{ if(state.tab!==key){ state.tab = key; render(); } };
+    wrap.appendChild(t);
+  });
+  return wrap;
+}
+
+function renderPanel(){
+  const panel = document.getElementById('panel');
+  if(state.tab === 'log') renderLog(panel);
+  else renderRange(panel, state.tab);
+}
+
+/* ---------- LOG TAB ---------- */
+async function renderLog(panel){
+  panel.innerHTML = '<div class="empty-state">Loading…</div>';
+  const entry = await loadEntry(state.currentDate);
+  const template = state.template;
+
+  panel.innerHTML = `
+    <div class="row">
+      <div class="date-nav">
+        <button id="prevDay">‹</button>
+        <input type="date" id="dateInput" value="${state.currentDate}" max="${todayStr()}">
+        <button id="nextDay">›</button>
+      </div>
+      <button class="edit-plan" id="editPlanBtn">Edit routines &amp; workout list</button>
+    </div>
+
+    <div class="section-label">Water</div>
+    <div class="water-pills" id="waterPills"></div>
+
+    <div class="section-label">Early morning routine</div>
+    <div class="checklist" id="morningChecklist"></div>
+
+    <div class="section-label">Breakfast</div>
+    <div class="field">
+      <textarea id="breakfastText" placeholder="What did you eat?">${escHtml(entry.breakfast.text)}</textarea>
+      <span class="cal-badge" id="breakfastCal"></span>
+    </div>
+
+    <div class="section-label">Chai</div>
+    <div class="checklist" id="chaiChecklist"></div>
+
+    <div class="section-label">Lunch</div>
+    <div class="field">
+      <textarea id="lunchText" placeholder="What did you eat?">${escHtml(entry.lunch.text)}</textarea>
+      <span class="cal-badge" id="lunchCal"></span>
+    </div>
+
+    <div class="section-label">Dinner</div>
+    <div class="field">
+      <textarea id="dinnerText" placeholder="What did you eat?">${escHtml(entry.dinner.text)}</textarea>
+      <span class="cal-badge" id="dinnerCal"></span>
+    </div>
+    <div class="cal-total" id="calTotal"></div>
+
+    <div class="section-label">Workout</div>
+    <div class="checklist" id="workoutChecklist"></div>
+
+    <div class="section-label">Night routine</div>
+    <div class="checklist" id="nightChecklist"></div>
+
+    <div class="section-label">Energy</div>
+    <div class="energy-scale" id="energyScale"></div>
+
+    <div class="section-label">Notes for the day</div>
+    <div class="field">
+      <textarea id="dayNotes" placeholder="Anything else worth remembering…">${escHtml(entry.notes)}</textarea>
+    </div>
+
+    <button class="btn save" id="saveBtn">Save entry</button>
+  `;
+
+  // generic checklist drawer, reused for morning / workout / night
+  function drawChecklistSection(elId, items, checksObj, bounceId){
+    const el = document.getElementById(elId);
+    el.innerHTML = '';
+    items.forEach((item,idx)=>{
+      const checked = !!checksObj[item.id];
+      const row = document.createElement('div');
+      row.className = 'check-item'+(checked?' done':'');
+      row.style.animationDelay = (idx*0.04)+'s';
+      const boxChecked = checked ? ' checked' : '';
+      const boxBounce = (bounceId===item.id) ? ' bounce' : '';
+      row.innerHTML = `<div class="checkbox-box${boxChecked}${boxBounce}" data-id="${item.id}">${CHECK_SVG}</div>
+        <label data-id="${item.id}">${escHtml(item.label)}</label>`;
+      const toggle = ()=>{
+        checksObj[item.id] = !checksObj[item.id];
+        drawChecklistSection(elId, items, checksObj, item.id);
+      };
+      row.querySelector('.checkbox-box').onclick = toggle;
+      row.querySelector('label').onclick = toggle;
+      el.appendChild(row);
+    });
+  }
+  drawChecklistSection('morningChecklist', template.morning, entry.morningChecks);
+  drawWorkoutChecklist();
+  drawChecklistSection('nightChecklist', template.night, entry.nightChecks);
+
+  // chai — single checkbox, styled like a checklist row
+  function drawChai(bounce){
+    const el = document.getElementById('chaiChecklist');
+    el.innerHTML = '';
+    const row = document.createElement('div');
+    row.className = 'check-item'+(entry.chai?' done':'');
+    row.innerHTML = `<div class="checkbox-box${entry.chai?' checked':''}${bounce?' bounce':''}">${CHECK_SVG}</div>
+      <label>Had chai</label>`;
+    const toggle = ()=>{ entry.chai = !entry.chai; drawChai(true); };
+    row.querySelector('.checkbox-box').onclick = toggle;
+    row.querySelector('label').onclick = toggle;
+    el.appendChild(row);
+  }
+  drawChai();
+
+  // workout — checkbox + optional detail/comment per item
+  function drawWorkoutChecklist(bounceId){
+    const el = document.getElementById('workoutChecklist');
+    el.innerHTML = '';
+    template.workout.forEach((item,idx)=>{
+      const checked = !!entry.workoutChecks[item.id];
+      const row = document.createElement('div');
+      row.className = 'check-item workout-item'+(checked?' done':'');
+      row.style.animationDelay = (idx*0.04)+'s';
+      const boxChecked = checked ? ' checked' : '';
+      const boxBounce = (bounceId===item.id) ? ' bounce' : '';
+      row.innerHTML = `<div class="checkbox-box${boxChecked}${boxBounce}" data-id="${item.id}">${CHECK_SVG}</div>
+        <label data-id="${item.id}">${escHtml(item.label)}</label>
+        <input type="text" class="workout-note" data-id="${item.id}" placeholder="details (optional)" value="${escAttr(entry.workoutNotes[item.id]||'')}">`;
+      const toggle = ()=>{
+        entry.workoutChecks[item.id] = !entry.workoutChecks[item.id];
+        drawWorkoutChecklist(item.id);
+      };
+      row.querySelector('.checkbox-box').onclick = toggle;
+      row.querySelector('label').onclick = toggle;
+      row.querySelector('.workout-note').oninput = (e)=>{ entry.workoutNotes[item.id] = e.target.value; };
+      el.appendChild(row);
+    });
+  }
+
+  // meals — free text with live calorie estimate
+  function wireMeal(mealKey, textId, calId){
+    const ta = document.getElementById(textId);
+    const badge = document.getElementById(calId);
+    function refresh(){
+      entry[mealKey].text = ta.value;
+      entry[mealKey].calories = estimateCalories(ta.value);
+      badge.textContent = entry[mealKey].calories>0 ? '≈ '+entry[mealKey].calories+' kcal (estimated)' : '';
+      const totalEl = document.getElementById('calTotal');
+      const tot = totalCalories(entry);
+      totalEl.textContent = tot>0 ? 'Estimated total today: ≈ '+tot+' kcal' : '';
+    }
+    ta.oninput = refresh;
+    refresh();
+  }
+  wireMeal('breakfast','breakfastText','breakfastCal');
+  wireMeal('lunch','lunchText','lunchCal');
+  wireMeal('dinner','dinnerText','dinnerCal');
+
+  // water — select liters drunk
+  const waterEl = document.getElementById('waterPills');
+  function drawWater(){
+    waterEl.innerHTML = '';
+    WATER_OPTIONS.forEach(v=>{
+      const p = document.createElement('div');
+      p.className = 'water-pill'+(entry.water===v?' sel':'');
+      p.textContent = v+'L';
+      p.onclick = ()=>{ entry.water = (entry.water===v)?0:v; drawWater(); };
+      waterEl.appendChild(p);
+    });
+  }
+  drawWater();
+
+  // energy
+  const energyEl = document.getElementById('energyScale');
+  const energyLabels = ['1','2','3','4','5'];
+  function drawEnergy(){
+    energyEl.innerHTML = '';
+    energyLabels.forEach((lbl,i)=>{
+      const val = i+1;
+      const d = document.createElement('div');
+      d.className = 'energy-dot'+(entry.energy===val?' sel':'');
+      d.textContent = lbl;
+      d.onclick = ()=>{ entry.energy = (entry.energy===val)?null:val; drawEnergy(); };
+      energyEl.appendChild(d);
+    });
+  }
+  drawEnergy();
+
+  document.getElementById('prevDay').onclick = ()=>{ state.currentDate = addDays(state.currentDate,-1); render(); };
+  document.getElementById('nextDay').onclick = ()=>{
+    const next = addDays(state.currentDate,1);
+    if(next <= todayStr()){ state.currentDate = next; render(); }
+  };
+  document.getElementById('dateInput').onchange = (e)=>{ state.currentDate = e.target.value; render(); };
+  document.getElementById('editPlanBtn').onclick = ()=>{ state.showPlanModal = true; render(); };
+
+  document.getElementById('saveBtn').onclick = async ()=>{
+    entry.notes = document.getElementById('dayNotes').value;
+    const btn = document.getElementById('saveBtn');
+    const ok = await saveEntry(entry);
+    btn.textContent = ok ? 'Saved ✓' : 'Save failed — try again';
+    btn.classList.toggle('saved', ok);
+    setTimeout(()=>{ btn.textContent='Save entry'; btn.classList.remove('saved'); }, 1800);
+  };
+}
+
+function escHtml(s){ return (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function escAttr(s){ return (s||'').toString().replace(/"/g,'&quot;'); }
+
+/* ---------- PLAN MODAL ---------- */
+function renderPlanModal(){
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.onclick = (e)=>{ if(e.target===bg){ state.showPlanModal=false; render(); } };
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `<h3>Edit routines &amp; workout list</h3>
+    <div class="modal-label">Early morning routine</div>
+    <div id="morningItemsList"></div>
+    <div class="add-item-row"><input type="text" id="morningNewInput" placeholder="Add an item…"><button class="btn small" id="morningAddBtn">Add</button></div>
+
+    <div class="modal-label">Workout</div>
+    <div id="workoutItemsList"></div>
+    <div class="add-item-row"><input type="text" id="workoutNewInput" placeholder="Add an item…"><button class="btn small" id="workoutAddBtn">Add</button></div>
+
+    <div class="modal-label">Night routine</div>
+    <div id="nightItemsList"></div>
+    <div class="add-item-row"><input type="text" id="nightNewInput" placeholder="Add an item…"><button class="btn small" id="nightAddBtn">Add</button></div>
+
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px;">
+      <button class="btn ghost small" id="closeModalBtn">Done</button>
+    </div>`;
+  bg.appendChild(modal);
+
+  let localTemplate = JSON.parse(JSON.stringify(state.template));
+
+  function drawSection(key, listId){
+    const list = modal.querySelector('#'+listId);
+    list.innerHTML = '';
+    localTemplate[key].forEach((item,idx)=>{
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.innerHTML = `<input type="text" value="${escAttr(item.label)}" data-idx="${idx}">
+        <button class="rm" data-idx="${idx}" style="background:none;border:none;color:#FF3B30;cursor:pointer;">✕</button>`;
+      row.querySelector('input').oninput = (e)=>{ localTemplate[key][idx].label = e.target.value; };
+      row.querySelector('.rm').onclick = ()=>{ localTemplate[key].splice(idx,1); drawSection(key,listId); };
+      list.appendChild(row);
+    });
+  }
+  drawSection('morning','morningItemsList');
+  drawSection('workout','workoutItemsList');
+  drawSection('night','nightItemsList');
+
+  function wireAdd(key, inputId, btnId, listId){
+    modal.querySelector('#'+btnId).onclick = ()=>{
+      const input = modal.querySelector('#'+inputId);
+      if(input.value.trim()){
+        localTemplate[key].push({id:key[0]+Date.now(), label: input.value.trim()});
+        input.value = '';
+        drawSection(key, listId);
+      }
+    };
+  }
+  wireAdd('morning','morningNewInput','morningAddBtn','morningItemsList');
+  wireAdd('workout','workoutNewInput','workoutAddBtn','workoutItemsList');
+  wireAdd('night','nightNewInput','nightAddBtn','nightItemsList');
+
+  modal.querySelector('#closeModalBtn').onclick = async ()=>{
+    ['morning','workout','night'].forEach(k=>{ localTemplate[k] = localTemplate[k].filter(i=>i.label.trim()); });
+    await saveTemplate(localTemplate);
+    state.showPlanModal = false;
+    render();
+  };
+  return bg;
+}
+
+/* ---------- RANGE TABS (week / biweekly / month) ---------- */
+function rangeConfig(tab){
+  if(tab==='week') return {days:7, label:'week'};
+  if(tab==='biweekly') return {days:14, label:'2 weeks'};
+  return {days:30, label:'30 days'};
+}
+async function renderRange(panel, tab){
+  panel.innerHTML = '<div class="empty-state">Loading…</div>';
+  const {days, label} = rangeConfig(tab);
+  const end = state.rangeAnchor;
+  const dates = Array.from({length:days},(_,i)=>addDays(end,-(days-1-i)));
+  const entries = await loadRange(dates);
+  const template = state.template;
+
+  const loggedDays = dates.filter(d=>entryHasData(entries[d]));
+  const pcts = loggedDays.map(d=>adherencePct(entries[d],template)).filter(p=>p!==null);
+  const avgAdherence = pcts.length ? Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length) : null;
+  const workoutDays = workoutDayCount(entries, dates);
+
+  panel.innerHTML = `
+    <div class="range-nav">
+      <button class="btn ghost small" id="rangePrev">‹ Previous ${label}</button>
+      <span class="lbl">${fmtShort(dates[0])} – ${fmtShort(dates[dates.length-1])}</span>
+      <button class="btn ghost small" id="rangeNext" ${dates[dates.length-1]>=todayStr()?'disabled style="opacity:.35;cursor:default;"':''}>Next ${label} ›</button>
+    </div>
+    <div class="stat-cards">
+      <div class="stat-card" style="animation-delay:.02s"><div class="num" id="statDays">0/${days}</div><div class="lbl">Days logged</div></div>
+      <div class="stat-card" style="animation-delay:.08s"><div class="num" id="statAdherence">—</div><div class="lbl">Avg routine adherence</div></div>
+      <div class="stat-card" style="animation-delay:.14s"><div class="num" id="statWorkouts">0</div><div class="lbl">Workout days</div></div>
+    </div>
+    <div class="section-label">Day by day</div>
+    <div id="dayRows"></div>
+  `;
+
+  const daysEl = document.getElementById('statDays');
+  animateNumber(daysEl, loggedDays.length, {suffix:'/'+days});
+  animateNumber(document.getElementById('statAdherence'), avgAdherence, {suffix: avgAdherence===null?'':'%'});
+  animateNumber(document.getElementById('statWorkouts'), workoutDays);
+
+  const rows = document.getElementById('dayRows');
+  if(!loggedDays.length){
+    rows.innerHTML = `<div class="empty-state"><div class="big">Nothing logged yet</div>No entries in this ${label}. Head to the Log tab to add one.</div>`;
+  } else {
+    const ordered = dates.slice().reverse();
+    ordered.forEach((d,idx)=>{
+      const e = entries[d];
+      const pct = adherencePct(e, template);
+      const row = document.createElement('div');
+      row.className = 'day-row';
+      row.style.animationDelay = (idx*0.02)+'s';
+      if(pct===null){
+        row.innerHTML = `<div class="d">${fmtWeekday(d)}<br>${fmtShort(d)}</div><div class="day-empty">not logged</div><div></div>`;
+      } else {
+        row.innerHTML = `<div class="d">${fmtWeekday(d)}<br>${fmtShort(d)}</div>
+          <div class="bar-track"><div class="bar-fill" data-pct="${pct}"></div></div>
+          <div class="pct">${pct}%</div>`;
+      }
+      row.style.cursor = 'pointer';
+      row.onclick = ()=>{ state.currentDate = d; state.tab='log'; render(); };
+      rows.appendChild(row);
+    });
+    // animate bar widths in on next frame
+    requestAnimationFrame(()=>{
+      rows.querySelectorAll('.bar-fill').forEach((el,i)=>{
+        setTimeout(()=>{ el.style.width = el.dataset.pct+'%'; }, 60+i*20);
+      });
+    });
+  }
+
+  document.getElementById('rangePrev').onclick = ()=>{ state.rangeAnchor = addDays(state.rangeAnchor,-days); render(); };
+  const nextBtn = document.getElementById('rangeNext');
+  if(nextBtn) nextBtn.onclick = ()=>{
+    const na = addDays(state.rangeAnchor, days);
+    state.rangeAnchor = na > todayStr() ? todayStr() : na;
+    render();
+  };
+}
+
+async function init(){
+  state.appearance = await loadAppearance();
+  applyTheme();
+  state.github = await loadGithubSettings();
+  state.profiles = await loadProfiles();
+  state.profileId = await loadCurrentProfileId(state.profiles);
+  if(state.github.enabled){
+    render(); // show something immediately
+    await pullProfileData(state.profileId);
+  }
+  state.template = await loadTemplate();
+  render();
+}
+init();
+</script>
+</body>
+</html>
